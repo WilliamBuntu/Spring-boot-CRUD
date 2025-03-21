@@ -1,12 +1,16 @@
 package com.pokemonreview.api.service.impl;
 
 import com.pokemonreview.api.dto.PokemonDto;
+import com.pokemonreview.api.dto.PokemonResponse;
 import com.pokemonreview.api.models.Pokemon;
 import com.pokemonreview.api.repository.PokemonRepository;
 import com.pokemonreview.api.service.PokemonService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
+import java.awt.print.Pageable;
 import java.util.List;
 
 @Service
@@ -32,10 +36,23 @@ public class PokemonServiceImpl implements PokemonService {
     }
 
     @Override
-    public List<PokemonDto> getAllPokemon() {
-       List<Pokemon> pokemon = pokemonRepository.findAll();
+    public PokemonResponse getAllPokemon(int pageNo, int PageSize) {
+      Pageable pageable = (Pageable) PageRequest.of(pageNo, PageSize);
+       Page<Pokemon> pokemons = pokemonRepository.findAll((org.springframework.data.domain.Pageable) pageable);
+       List<Pokemon> pokemonList = pokemons.getContent();
+
        // map return a new list with the elements of the original list transformed by the lambda function
-        return pokemon.stream().map(this::mapPokemonToPokemonDto).toList();
+        List<PokemonDto> content = pokemonList.stream().map(this::mapPokemonToPokemonDto).toList();
+
+        PokemonResponse pokemonResponse = new PokemonResponse();
+        pokemonResponse.setContent(content);
+        pokemonResponse.setPageNo(pokemons.getNumber());
+        pokemonResponse.setPageSize(pokemons.getSize());
+        pokemonResponse.setTotalPages(pokemons.getTotalPages());
+        pokemonResponse.setTotalElements(pokemons.getTotalElements());
+        pokemonResponse.setLast(pokemons.isLast());
+
+        return pokemonResponse;
     }
 
     @Override
